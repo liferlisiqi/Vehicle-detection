@@ -1,9 +1,5 @@
-## Writeup Template
-### You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
+## Vehicle Detection Project
 ---
-
-**Vehicle Detection Project**
 
 The goals / steps of this project are the following:
 
@@ -15,53 +11,82 @@ The goals / steps of this project are the following:
 * Estimate a bounding box for vehicles detected.
 
 [//]: # (Image References)
-[image1]: ./examples/car_not_car.png
-[image2]: ./examples/HOG_example.jpg
-[image3]: ./examples/sliding_windows.jpg
-[image4]: ./examples/sliding_window.jpg
-[image5]: ./examples/bboxes_and_heat.png
-[image6]: ./examples/labels_map.png
-[image7]: ./examples/output_bboxes.png
+[image1]: ./output_images/car_not_car.png
+[image2]: ./output_images/cutout1_HOG.jpg
+[image3]: ./output_images/sliding_windows.png
+[image4]: ./output_images/sliding_window.png
+[image5]: ./output_images/heatmap.png
+[image6]: ./output_images/label.png
+[image7]: ./output_images/bboxes.png
 [video1]: ./project_video.mp4
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
 ### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
 
 ---
-### Writeup / README
 
-#### 1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.  [Here](https://github.com/udacity/CarND-Vehicle-Detection/blob/master/writeup_template.md) is a template writeup for this project you can use as a guide and a starting point.  
+### HOG and color features
 
-You're reading it!
-
-### Histogram of Oriented Gradients (HOG)
-
-#### 1. Explain how (and identify where in your code) you extracted HOG features from the training images.
-
-The code for this step is contained in the first code cell of the IPython notebook (or in lines # through # of the file called `some_file.py`).  
+#### 1. Extracte HOG features from the training images.
 
 I started by reading in all the `vehicle` and `non-vehicle` images.  Here is an example of one of each of the `vehicle` and `non-vehicle` classes:
 
 ![alt text][image1]
 
+Then I use skimage.feature.hog() to extract HOG features.
+```python3
+hog(img, orientations=orient,pixels_per_cell=(pix_per_cell,pix_per_cell),cells_per_block=(cell_per_block,cell_per_block),transform_sqrt=False, visualise=vis, feature_vector=feature_vec) 
+```
+
 I then explored different color spaces and different `skimage.hog()` parameters (`orientations`, `pixels_per_cell`, and `cells_per_block`).  I grabbed random images from each of the two classes and displayed them to get a feel for what the `skimage.hog()` output looks like.
 
 Here is an example using the `YCrCb` color space and HOG parameters of `orientations=8`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
-
-
 ![alt text][image2]
 
 #### 2. Explain how you settled on your final choice of HOG parameters.
 
 I tried various combinations of parameters and...
 
-#### 3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
+#### 3. Extracte color features from the training images.
+```python
+def color_hist(img, nbins=32):
+    hist1 = np.histogram(img[:,:,0], bins=nbins)
+    hist2 = np.histogram(img[:,:,1], bins=nbins)
+    hist3 = np.histogram(img[:,:,2], bins=nbins)
+    
+    bin_edges = hist1[1]
+    bin_centers = bin_edges[1:] - 256 / nbins / 2
+    
+    return hist_features
+```
 
-I trained a linear SVM using...
+```python
+def bin_spatial(img, size=(32,32)):
+    color1 = cv2.resize(img[:,:,0], size).ravel()
+    color2 = cv2.resize(img[:,:,1], size).ravel()
+    color3 = cv2.resize(img[:,:,2], size).ravel()
+    
+    return np.hstack((color1, color2, color3))
+```
 
+#### 4. Traine a classifier using the selected HOG and color features.
+After extracting HOG and color features, sklearn.preprocessing.StandardScaler() is used to scaler these features. Then I train a linear SVM classfier to detect cars.
+```python
+X = np.vstack((car_features, notcar_features)).astype(np.float64)
+X_scaler = StandardScaler()
+X_scaler.fit(X)
+scaled_X = X_scaler.transform(X)
+y = np.hstack((np.ones(len(car_features)), np.zeros(len(notcar_features))))
+rand_state = np.random.randint(0, 100)
+x_train, x_test, y_train, y_test = train_test_split(scaled_X, y, test_size=0.2, random_state=rand_state)
+
+svc = LinearSVC()
+svc.fit(x_train, y_train)
+print(svc.score(x_test, y_test))
+```
 ### Sliding Window Search
 
-#### 1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
+#### 1. Describe how you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
 I decided to search random window positions at random scales all over the image and came up with this (ok just kidding I didn't actually ;):
 
@@ -76,8 +101,8 @@ Ultimately I searched on two scales using YCrCb 3-channel HOG features plus spat
 
 ### Video Implementation
 
-#### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)
-Here's a [link to my video result](./project_video.mp4)
+#### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video.
+Here's a [link to my video result](./project_result.mp4)
 
 
 #### 2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
@@ -86,7 +111,7 @@ I recorded the positions of positive detections in each frame of the video.  Fro
 
 Here's an example result showing the heatmap from a series of frames of video, the result of `scipy.ndimage.measurements.label()` and the bounding boxes then overlaid on the last frame of video:
 
-### Here are six frames and their corresponding heatmaps:
+###  corresponding heatmaps:
 
 ![alt text][image5]
 
@@ -95,9 +120,6 @@ Here's an example result showing the heatmap from a series of frames of video, t
 
 ### Here the resulting bounding boxes are drawn onto the last frame in the series:
 ![alt text][image7]
-
-
-
 ---
 
 ### Discussion
