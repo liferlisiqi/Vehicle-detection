@@ -40,14 +40,12 @@ hog(img, orientations=orient,pixels_per_cell=(pix_per_cell,pix_per_cell),cells_p
 
 I then explored different color spaces and different `skimage.hog()` parameters (`orientations`, `pixels_per_cell`, and `cells_per_block`).  I grabbed random images from each of the two classes and displayed them to get a feel for what the `skimage.hog()` output looks like.
 
-Here is an example using the `YCrCb` color space and HOG parameters of `orientations=8`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
+Here is an example using the `YCrCb` color space and HOG parameters of `orientations=9`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
 ![alt text][image2]
 
-#### 2. Settle on my final choice of HOG parameters.
+I tried various combinations of parameters and `orientations=9`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)` was selected as the final choose.
 
-I tried various combinations of parameters and...
-
-#### 3. Extracte color features from the training images.
+#### 2. Extracte color features from the training images.
 Extract histogram and binned color features of each channel.
 ```python
 def color_hist(img, nbins=32):
@@ -69,7 +67,7 @@ def bin_spatial(img, size=(32,32)):
     return np.hstack((color1, color2, color3))
 ```
 
-#### 4. Traine a classifier using the selected HOG and color features.
+#### 3. Traine a classifier using the selected HOG and color features.
 After extracting HOG and color features, sklearn.preprocessing.StandardScaler() is used to normalize these extracted features. Then I train a linear SVM classifier to detect cars.
 ```python
 X = np.vstack((car_features, notcar_features)).astype(np.float64)
@@ -88,7 +86,7 @@ print(svc.score(x_test, y_test))
 
 #### 1. Describe how you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
-I decided to search random window positions at random scales all over the image and came up with this (ok just kidding I didn't actually ;):
+I decided to search window from 400 to 656 in y-axis at 1.5 scales all over the images and came up with this:
 
 ![alt text][image3]
 
