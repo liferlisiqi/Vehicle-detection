@@ -120,6 +120,9 @@ Here is the output of `scipy.ndimage.measurements.label()` on the integrated hea
 
 Here is the resulting bounding boxes are drawn onto the last frame in the series:
 ![alt text][image7]
+
+In order to decrease false positives, I use a cache to average the collected boxes from previous frames. The method is `collections.deque`,  in this way I do not need to delete the oldest heatmap.
+
 ---
 
 ### Discussion
